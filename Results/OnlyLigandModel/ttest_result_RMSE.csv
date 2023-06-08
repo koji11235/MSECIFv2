@@ -1,0 +1,4 @@
+group1,group2,t-statistic,p-value,bonferroni-corrected p-value
+Multi-shelled ECIF,Only Ligand Descriptor,-153.50783209779135,0.0,0.0
+Multi-shelled ECIF,Weighted ECIF,-164.5650001440601,0.0,0.0
+Only Ligand Descriptor,Weighted ECIF,146.55383621703342,0.0,0.0

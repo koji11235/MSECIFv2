@@ -1,0 +1,4 @@
+group1,group2,t-statistic,p-value,bonferroni-corrected p-value
+ECIF::GBT,Multi-shelled ECIF,-75.52683868675024,0.0,0.0
+ECIF::GBT,Weighted ECIF,163.76784834378165,0.0,0.0
+Multi-shelled ECIF,Weighted ECIF,228.84931587164937,0.0,0.0
