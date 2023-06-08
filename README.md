@@ -16,20 +16,22 @@ Ex1_generate_feature.ipynb relies on this.
 
 ## Results
 * FeatureParamCV
-   * Evaluation results of multi-shelled ECIF of all conditions (threshold and step) and all seed values. The evaluation was performed with pearson correlation coefficient （PCC) and root mean squared error (RMSE) of the CASF2016 core set.
+   * Cross-validation results of all conditions and all seed values. The evaluation was performed with average pearson correlation coefficient （PCC) and average root mean squared error (RMSE) of 10 runs of 10 fold cross-validation.
 * GBTparamCV
-   * Evaluation results of weighted ECIF of all conditions (threshold) and all seed values. The evaluation was performed with PCC and RMSE of the CASF2016 core set.
+   * Cross-validation results of all conditions and all seed values. The evaluation was performed with average pearson correlation coefficient （PCC) and average root mean squared error (RMSE) of 10 runs of 10 fold cross-validation.
 
-*T-test_3ECIF
+* T-test_3ECIF
+   * Evaluation results of 3 ECIFs and all seed values. The evaluation was performed with PCC and RMSE of the CASF2016 core set.
 
-*OnlyLigandModel
+* OnlyLigandModel
+   * Evaluation results of only-ligand-descriptor model and all seed values. The evaluation was performed with PCC and RMSE of the CASF2016 core set.
 
-*LIT-PCBA
-
+* LIT-PCBA
+  * Evaluation results of best models of 3 ECIFs with LIT-PCBA dataset.
 
 * FeatureImportance
    * All the permutation feature importance of the best multi-shelled ECIF model.
-   * features_at_specific_distances_result.csv: Evaluation results of multi-shelled ECIF models trained by the features at specific distance. The evaluation was performed with pearson correlation coefficient （PCC) and root mean squared error (RMSE) of the CASF2016 core set.
+   * features_at_specific_distances_result.csv: Evaluation results of multi-shelled ECIF models trained by the features at specific distance. The evaluation was performed with pearson correlation coefficient (PCC) and root mean squared error (RMSE) of the CASF2016 core set.
    
 ## Features
 * MSECIF_threshold*_step*.csv
