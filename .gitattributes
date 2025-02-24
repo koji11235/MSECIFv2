@@ -1,2 +1,0 @@
-Features/*.zip filter=lfs diff=lfs merge=lfs -text
-Models/*.pkl filter=lfs diff=lfs merge=lfs -text
