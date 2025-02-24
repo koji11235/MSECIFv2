@@ -3,6 +3,16 @@ Improved version of extended connectivity interaction features (ECIF) by enablin
 
 <img src="./graphical_abstract.png" alt="">
 
+
+## Notice: Large Files Moved to Google Drive
+
+To reduce Git LFS storage usage, the following large files have been moved to Google Drive. You can download them from the provided links.
+[google drive](https://drive.google.com/drive/folders/1gl4odYXetNyOEAHfE03G93Vs33Mkym1N?usp=share_link)
+If you need access to any of these files, please download them using the provided links.
+
+
+
+
 ## Script
 * msecif_v2.py
    * Codes used to extract multi-shelled ECIF and weighted ECIF features; place in the same directory as PDB_Atom_Keys_v2.csv. 
