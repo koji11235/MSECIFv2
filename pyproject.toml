@@ -11,9 +11,18 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.4.6",
     "pandas>=3.0.3",
-    "rdkit>=2023.9",
+    "rdkit>=2025.3.1",
     "scipy>=1.17.1",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = ["msecif_v2.py", "PDB_Atom_Keys_v2.csv"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
