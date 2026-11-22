@@ -84,6 +84,17 @@ ELEMENTS_ProteinAtoms = ["C","N", "O", "S"]
 ELEMENTS_LigandAtoms = ["Br", "C", "Cl", "F", "I", "N", "O", "P", "S"]
 PossibleELEMENTS = [i[0]+"-"+i[1] for i in product(ELEMENTS_ProteinAtoms, ELEMENTS_LigandAtoms)]
 
+# Index of each possible pair, used to count pairs in one vectorised pass
+ECIF_INDEX = {pair: i for i, pair in enumerate(PossibleECIF)}
+ELEMENTS_INDEX = {pair: i for i, pair in enumerate(PossibleELEMENTS)}
+
+
+def _count_pairs(pair_column, index):
+# Counts of each possible pair type, in the order of index; pair types not in index are ignored.
+# Equivalent to [list(pair_column).count(x) for x in index], without converting the column once per type
+    ids = pair_column.map(index).dropna().to_numpy(dtype=np.int64)
+    return np.bincount(ids, minlength=len(index))
+
 
 # ### For ligand descriptors
 
@@ -143,7 +154,7 @@ def GetAtomType(atom):
 # This function takes an atom in a molecule and returns its type as defined for ECIF
     
     AtomType = [atom.GetSymbol(),
-                str(atom.GetExplicitValence()),
+                str(atom.GetValence(Chem.rdchem.ValenceType.EXPLICIT)),
                 str(len([x.GetSymbol() for x in atom.GetNeighbors() if x.GetSymbol() != "H"])),
                 str(len([x.GetSymbol() for x in atom.GetNeighbors() if x.GetSymbol() == "H"])),
                 # str(int(atom.GetIsAromatic())),
@@ -153,19 +164,45 @@ def GetAtomType(atom):
     return(";".join(AtomType))
 
 
-# ### Ligands are loaded from an SDF file in a dataframe format considering the atom type definitions
+# ### Ligands are loaded from an SDF or MOL2 file in a dataframe format considering the atom type definitions
 
 # In[6]:
 
 
-def LoadSDFasDF(SDF):
-# This function takes an SDF for a ligand as input and returns it as a pandas DataFrame with its atom types labeled according to ECIF
-    
-    m = Chem.MolFromMolFile(SDF, sanitize=False)
+def _match_sdf_conventions(m):
+# RDKit reads MOL2 ligands differently from the PDBbind-style SDFs the ECIF atom types were defined on:
+#  - O.co2 (carboxylate/phosphate O) becomes C(=O)[O-], giving "O;1;1;0;0", which is not in ECIF_LigandAtoms;
+#    the SDFs have C(=O)=O with a -1 charge on C (and P(=O)(=O)=O), so the O.co2 bonds are set to double
+#  - atoms in "ar" bonds are flagged aromatic; the SDFs keep aromatic bonds but not aromatic atoms
+    for atom in m.GetAtoms():
+        atom.SetIsAromatic(False)
+        if atom.GetProp("_TriposAtomType") == "O.co2":
+            atom.SetFormalCharge(0)
+            for bond in atom.GetBonds():
+                bond.SetBondType(Chem.BondType.DOUBLE)
+                if bond.GetOtherAtom(atom).GetSymbol() == "C":
+                    bond.GetOtherAtom(atom).SetFormalCharge(-1)
+
+
+def LoadLigand(path):
+# This function reads a ligand from an SDF/MOL or MOL2 file, unsanitised, as the ECIF atom types expect
+    if str(path).lower().endswith(".mol2"):
+        m = Chem.MolFromMol2File(path, sanitize=False, removeHs=False)
+        if m is not None:
+            _match_sdf_conventions(m)
+    else:
+        m = Chem.MolFromMolFile(path, sanitize=False)
     if m is None:
-        print(f"######### ERROR!!!!: m is None. sdf file {SDF} #############")
+        raise ValueError(f"RDKit could not read ligand file {path}")
     m.UpdatePropertyCache(strict=False)
-    
+    return m
+
+
+def LoadSDFasDF(SDF):
+# This function takes an SDF (or MOL2) for a ligand as input and returns it as a pandas DataFrame with its atom types labeled according to ECIF
+
+    m = LoadLigand(SDF)
+
     ECIF_atoms = []
 
     for atom in m.GetAtoms():
@@ -253,7 +290,7 @@ def GetPLPairs(PDB_protein, SDF_ligand, distance_cutoff=6.0):
 def GetECIF(PDB_protein, SDF_ligand, distance_cutoff=6.0):
 # Main function for the calculation of ECIF
     Pairs = GetPLPairs(PDB_protein, SDF_ligand, distance_cutoff=distance_cutoff)
-    ECIF = [list(Pairs["ECIF_PAIR"]).count(x) for x in PossibleECIF]
+    ECIF = _count_pairs(Pairs["ECIF_PAIR"], ECIF_INDEX).tolist()
     return ECIF
 
 
@@ -265,7 +302,7 @@ def GetECIF(PDB_protein, SDF_ligand, distance_cutoff=6.0):
 def GetELEMENTS(PDB_protein, SDF_ligand, distance_cutoff=6.0):
 # Function for the calculation of ELEMENTS
     Pairs = GetPLPairs(PDB_protein, SDF_ligand, distance_cutoff=distance_cutoff)
-    ELEMENTS = [list(Pairs["ELEMENTS_PAIR"]).count(x) for x in PossibleELEMENTS]
+    ELEMENTS = _count_pairs(Pairs["ELEMENTS_PAIR"], ELEMENTS_INDEX).tolist()
     return ELEMENTS
 
 
@@ -276,7 +313,7 @@ def get_multi_shelled_ecif(protein_pdb, ligand_sdf, shells):
     total_counts = list()
     for shell in shells:
         filtered = pairs[pairs['DISTANCE'] < shell]
-        total_counts.append([list(filtered["ECIF_PAIR"]).count(x) for x in PossibleECIF])
+        total_counts.append(_count_pairs(filtered["ECIF_PAIR"], ECIF_INDEX))
     feature = np.diff(np.array(total_counts), axis=0, prepend=0).flatten()
     return feature
 
@@ -312,8 +349,7 @@ def get_weighted_ecif(protein_pdb, ligand_sdf, distance_cutoff=6.0, squared=True
 
 def GetRDKitDescriptors(SDF):
 # Function for the calculation of ligand descriptors
-    mol = Chem.MolFromMolFile(SDF, sanitize=False)
-    mol.UpdatePropertyCache(strict=False)
+    mol = LoadLigand(SDF)
     Chem.GetSymmSSSR(mol)
     return DescCalc.CalcDescriptors(mol)
 
